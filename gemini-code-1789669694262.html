@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Copart UK Fee Calculator</title>
+  <style>
+    :root {
+      --primary: #002c6c;
+      --bg: #f4f6f9;
+      --card-bg: #ffffff;
+      --text: #222222;
+      --border: #dcdcdc;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .calculator-container {
+      background: var(--card-bg);
+      width: 100%;
+      max-width: 650px;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+
+    h2 {
+      margin-top: 0;
+      color: var(--primary);
+      text-align: center;
+      border-bottom: 2px solid var(--bg);
+      padding-bottom: 12px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    input[type="number"], select {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-sizing: border-box;
+      background-color: #fff;
+    }
+
+    .toggle-section {
+      background-color: var(--bg);
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-weight: 700;
+      margin-bottom: 12px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--primary);
+    }
+
+    .toggle-group {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+
+    .toggle-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .toggle-group label {
+      margin: 0;
+      font-weight: normal;
+      cursor: pointer;
+    }
+
+    .toggle-group input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .extra-input {
+      display: none;
+      margin-top: 8px;
+    }
+
+    .breakdown {
+      margin-top: 20px;
+      border-top: 2px solid var(--bg);
+      padding-top: 15px;
+    }
+
+    .breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      font-size: 15px;
+    }
+
+    .breakdown-row.subtotal {
+      font-weight: 600;
+      border-top: 1px dashed var(--border);
+      margin-top: 5px;
+      padding-top: 8px;
+    }
+
+    .breakdown-row.total {
+      font-size: 20px;
+      font-weight: bold;
+      color: var(--primary);
+      border-top: 2px solid var(--primary);
+      padding-top: 12px;
+      margin-top: 10px;
+    }
+
+    .footer {
+      font-size: 12px;
+      color: #666;
+      margin-top: 20px;
+      padding-top: 10px;
+      border-top: 1px solid var(--bg);
+      text-align: center;
+    }
+
+    .footer a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+<div class="calculator-container">
+  <h2>Copart UK Official Fee Calculator</h2>
+
+  <!-- Hammer Price Input -->
+  <div class="form-group">
+    <label for="hammerPrice">Hammer / Sale Price (£)</label>
+    <input type="number" id="hammerPrice" placeholder="e.g. 2000" value="2000" min="0" step="0.01" oninput="calculateTotal()">
+  </div>
+
+  <!-- Volume Tier Selection -->
+  <div class="form-group">
+    <label for="volumeTier">Buyer Volume Tier</label>
+    <select id="volumeTier" onchange="calculateTotal()">
+      <option value="B">Low Volume (Fee B) — Fewer than 12 vehicles/year</option>
+      <option value="A">High Volume (Fee A) — 12 or more vehicles/year</option>
+    </select>
+  </div>
+
+  <!-- Fee Toggles Section -->
+  <div class="toggle-section">
+    <div class="section-title">Applicable Fees</div>
+
+    <div class="toggle-group">
+      <label for="enableInternetFee">Include Internet Bid Fee</label>
+      <input type="checkbox" id="enableInternetFee" checked onchange="calculateTotal()">
+    </div>
+
+    <div class="toggle-group">
+      <label for="enableRetrievalFee">Include Lot Retrieval Fee (£50.00)</label>
+      <input type="checkbox" id="enableRetrievalFee" checked onchange="calculateTotal()">
+    </div>
+
+    <div class="toggle-group">
+      <label for="enableDelivery">Include Delivery / Transport Fee</label>
+      <input type="checkbox" id="enableDelivery" onchange="toggleDeliveryInput(); calculateTotal();">
+    </div>
+    <div class="extra-input" id="deliveryInputGroup">
+      <input type="number" id="deliveryFee" placeholder="Enter delivery cost (£)" value="0" min="0" step="0.01" oninput="calculateTotal()">
+    </div>
+  </div>
+
+  <!-- Independent VAT Toggles -->
+  <div class="toggle-section">
+    <div class="section-title">VAT Options (20%)</div>
+
+    <div class="toggle-group">
+      <label for="vatVehicle">Apply VAT to Vehicle Sale Price (VAT Qualifying)</label>
+      <input type="checkbox" id="vatVehicle" onchange="calculateTotal()">
+    </div>
+
+    <div class="toggle-group">
+      <label for="vatBuyerFee">Apply VAT to Buyer Fee</label>
+      <input type="checkbox" id="vatBuyerFee" checked onchange="calculateTotal()">
+    </div>
+
+    <div class="toggle-group">
+      <label for="vatInternetFee">Apply VAT to Internet Bid Fee</label>
+      <input type="checkbox" id="vatInternetFee" checked onchange="calculateTotal()">
+    </div>
+
+    <div class="toggle-group">
+      <label for="vatRetrievalFee">Apply VAT to Lot Retrieval Fee</label>
+      <input type="checkbox" id="vatRetrievalFee" checked onchange="calculateTotal()">
+    </div>
+
+    <div class="toggle-group">
+      <label for="vatDelivery">Apply VAT to Delivery / Transport</label>
+      <input type="checkbox" id="vatDelivery" checked onchange="calculateTotal()">
+    </div>
+  </div>
+
+  <!-- Calculation Breakdown Output -->
+  <div class="breakdown">
+    <div class="breakdown-row">
+      <span>Hammer Price:</span>
+      <span id="outHammer">£0.00</span>
+    </div>
+    <div class="breakdown-row">
+      <span>Buyer Fee (<span id="lblTier">Fee B</span>):</span>
+      <span id="outBuyerFee">£0.00</span>
+    </div>
+    <div class="breakdown-row" id="rowInternet">
+      <span>Internet Bid Fee:</span>
+      <span id="outInternetFee">£0.00</span>
+    </div>
+    <div class="breakdown-row" id="rowRetrieval">
+      <span>Lot Retrieval Fee:</span>
+      <span id="outRetrievalFee">£0.00</span>
+    </div>
+    <div class="breakdown-row" id="rowDelivery" style="display:none;">
+      <span>Delivery Fee:</span>
+      <span id="outDeliveryFee">£0.00</span>
+    </div>
+    <div class="breakdown-row subtotal">
+      <span>Total Calculated VAT (20%):</span>
+      <span id="outVAT">£0.00</span>
+    </div>
+
+    <div class="breakdown-row total">
+      <span>Total Payable:</span>
+      <span id="outTotal">£0.00</span>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    Made by <a href="https://github.com/ajdwilson" target="_blank" rel="noopener noreferrer">ajdwilson on github</a>
+  </div>
+</div>
+
+<script>
+  /******************************************************************
+   * EDITABLE CONFIGURATION DATA: COPART UK FEE TABLES & RATES
+   ******************************************************************/
+  const COPART_CONFIG = {
+    vatRate: 0.20, // 20% prevailing VAT rate
+    lotRetrievalFee: 50.00, // Mandatory Lot Retrieval Fee
+
+    // High Volume (Fee A) and Low Volume (Fee B) Buyer Fee Tiers (£)
+    buyerFeeTiers: [
+      { max: 49.99,      feeA: 5.00,   feeB: 20.00 },
+      { max: 99.99,      feeA: 20.00,  feeB: 65.00 },
+      { max: 199.99,     feeA: 45.00,  feeB: 85.00 },
+      { max: 299.99,     feeA: 65.00,  feeB: 105.00 },
+      { max: 349.99,     feeA: 75.00,  feeB: 115.00 },
+      { max: 399.99,     feeA: 85.00,  feeB: 125.00 },
+      { max: 449.99,     feeA: 95.00,  feeB: 135.00 },
+      { max: 499.99,     feeA: 100.00, feeB: 140.00 },
+      { max: 549.99,     feeA: 105.00, feeB: 145.00 },
+      { max: 599.99,     feeA: 115.00, feeB: 150.00 },
+      { max: 699.99,     feeA: 125.00, feeB: 165.00 },
+      { max: 799.99,     feeA: 140.00, feeB: 180.00 },
+      { max: 899.99,     feeA: 155.00, feeB: 195.00 },
+      { max: 999.99,     feeA: 170.00, feeB: 210.00 },
+      { max: 1199.99,    feeA: 185.00, feeB: 225.00 },
+      { max: 1299.99,    feeA: 205.00, feeB: 245.00 },
+      { max: 1399.99,    feeA: 215.00, feeB: 255.00 },
+      { max: 1499.99,    feeA: 225.00, feeB: 265.00 },
+      { max: 1599.99,    feeA: 235.00, feeB: 275.00 },
+      { max: 1699.99,    feeA: 245.00, feeB: 285.00 },
+      { max: 1799.99,    feeA: 260.00, feeB: 300.00 },
+      { max: 1999.99,    feeA: 270.00, feeB: 310.00 },
+      { max: 2399.99,    feeA: 300.00, feeB: 340.00 },
+      { max: 2499.99,    feeA: 325.00, feeB: 365.00 },
+      { max: 2999.99,    feeA: 350.00, feeB: 390.00 },
+      { max: 3499.99,    feeA: 385.00, feeB: 425.00 },
+      { max: 3999.99,    feeA: 425.00, feeB: 465.00 },
+      { max: 4499.99,    feeA: 470.00, feeB: 510.00 },
+      { max: 4999.99,    feeA: 495.00, feeB: 535.00 },
+      { max: 5999.99,    feeA: 515.00, feeB: 555.00 },
+      { max: 7499.99,    feeA: 525.00, feeB: 565.00 },
+      { max: 9999.99,    feeA: 550.00, feeB: 590.00 },
+      { max: 10000000.0, rateA: 0.055, rateB: 0.065 } // Percentage-based above £10,000 (5.5% High / 6.5% Low)
+    ],
+
+    // Tiered Internet Bid Fees (£)
+    internetBidTiers: [
+      { max: 99.99,      fee: 0.00 },
+      { max: 499.99,     fee: 25.00 },
+      { max: 999.99,     fee: 39.00 },
+      { max: 1499.99,    fee: 59.00 },
+      { max: 1999.99,    fee: 69.00 },
+      { max: 3999.99,    fee: 79.00 },
+      { max: 5999.99,    fee: 89.00 },
+      { max: 7999.99,    fee: 95.00 },
+      { max: 10000000.0, fee: 99.00 }
+    ]
+  };
+
+  // Function to resolve Buyer Fee according to sale price and tier
+  function lookupBuyerFee(price, tier) {
+    if (price <= 0) return 0;
+    for (let item of COPART_CONFIG.buyerFeeTiers) {
+      if (price <= item.max) {
+        if (item.rateA !== undefined) {
+          return price * (tier === 'A' ? item.rateA : item.rateB);
+        }
+        return tier === 'A' ? item.feeA : item.feeB;
+      }
+    }
+    return 0;
+  }
+
+  // Function to resolve Internet Bid Fee
+  function lookupInternetFee(price) {
+    if (price <= 0) return 0;
+    for (let item of COPART_CONFIG.internetBidTiers) {
+      if (price <= item.max) {
+        return item.fee;
+      }
+    }
+    return 0;
+  }
+
+  function toggleDeliveryInput() {
+    const isChecked = document.getElementById('enableDelivery').checked;
+    document.getElementById('deliveryInputGroup').style.display = isChecked ? 'block' : 'none';
+    document.getElementById('rowDelivery').style.display = isChecked ? 'flex' : 'none';
+  }
+
+  function calculateTotal() {
+    const hammer = parseFloat(document.getElementById('hammerPrice').value) || 0;
+    const tier = document.getElementById('volumeTier').value;
+
+    // Feature Toggles
+    const enableInternet = document.getElementById('enableInternetFee').checked;
+    const enableRetrieval = document.getElementById('enableRetrievalFee').checked;
+    const enableDelivery = document.getElementById('enableDelivery').checked;
+
+    // VAT Toggles
+    const vatVeh = document.getElementById('vatVehicle').checked;
+    const vatBuy = document.getElementById('vatBuyerFee').checked;
+    const vatInt = document.getElementById('vatInternetFee').checked;
+    const vatRet = document.getElementById('vatRetrievalFee').checked;
+    const vatDel = document.getElementById('vatDelivery').checked;
+
+    // Base Calculations
+    const buyerFee = lookupBuyerFee(hammer, tier);
+    const internetFee = enableInternet ? lookupInternetFee(hammer) : 0;
+    const retrievalFee = enableRetrieval ? COPART_CONFIG.lotRetrievalFee : 0;
+    const deliveryFee = enableDelivery ? (parseFloat(document.getElementById('deliveryFee').value) || 0) : 0;
+
+    // UI Row Visibility Updates
+    document.getElementById('rowInternet').style.display = enableInternet ? 'flex' : 'none';
+    document.getElementById('rowRetrieval').style.display = enableRetrieval ? 'flex' : 'none';
+    document.getElementById('lblTier').textContent = tier === 'A' ? 'Fee A' : 'Fee B';
+
+    // VAT Calculations
+    const vatRate = COPART_CONFIG.vatRate;
+    let totalVAT = 0;
+
+    if (vatVeh) totalVAT += hammer * vatRate;
+    if (vatBuy) totalVAT += buyerFee * vatRate;
+    if (vatInt) totalVAT += internetFee * vatRate;
+    if (vatRet) totalVAT += retrievalFee * vatRate;
+    if (vatDel) totalVAT += deliveryFee * vatRate;
+
+    // Calculate Final Total
+    const totalPayable = hammer + buyerFee + internetFee + retrievalFee + deliveryFee + totalVAT;
+
+    // Render Formatted Outputs
+    document.getElementById('outHammer').textContent = `£${hammer.toFixed(2)}`;
+    document.getElementById('outBuyerFee').textContent = `£${buyerFee.toFixed(2)}`;
+    document.getElementById('outInternetFee').textContent = `£${internetFee.toFixed(2)}`;
+    document.getElementById('outRetrievalFee').textContent = `£${retrievalFee.toFixed(2)}`;
+    document.getElementById('outDeliveryFee').textContent = `£${deliveryFee.toFixed(2)}`;
+    document.getElementById('outVAT').textContent = `£${totalVAT.toFixed(2)}`;
+    document.getElementById('outTotal').textContent = `£${totalPayable.toFixed(2)}`;
+  }
+
+  // Initial Calculation Run
+  calculateTotal();
+</script>
+
+</body>
+</html>

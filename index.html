@@ -3,14 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Copart UK Fee Calculator</title>
+  <title>Copart UK Tools</title>
   <style>
     :root {
       --primary: #002c6c;
+      --primary-hover: #001f4d;
       --bg: #f4f6f9;
       --card-bg: #ffffff;
       --text: #222222;
       --border: #dcdcdc;
+      --sidebar-width: 240px;
+    }
+
+    * {
+      box-sizing: border-box;
     }
 
     body {
@@ -18,15 +24,83 @@
       background-color: var(--bg);
       color: var(--text);
       margin: 0;
-      padding: 20px;
+      padding: 0;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar Styling */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--card-bg);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 20px 0;
+      flex-shrink: 0;
+    }
+
+    .sidebar-header {
+      padding: 0 20px 20px;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--primary);
+      border-bottom: 2px solid var(--bg);
+    }
+
+    .nav-list {
+      list-style: none;
+      padding: 0;
+      margin: 15px 0 0 0;
+    }
+
+    .nav-btn {
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: none;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      display: block;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .nav-btn:hover {
+      background-color: var(--bg);
+      color: var(--primary);
+    }
+
+    .nav-btn.active {
+      background-color: var(--primary);
+      color: #fff;
+    }
+
+    /* Main Content Area */
+    .main-content {
+      flex: 1;
+      padding: 30px 20px;
       display: flex;
       justify-content: center;
+      align-items: flex-start;
+      overflow-y: auto;
+    }
+
+    .page {
+      display: none;
+      width: 100%;
+      max-width: 650px;
+    }
+
+    .page.active {
+      display: block;
     }
 
     .calculator-container {
       background: var(--card-bg);
       width: 100%;
-      max-width: 650px;
       padding: 25px;
       border-radius: 12px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.08);
@@ -152,121 +226,296 @@
     .footer a:hover {
       text-decoration: underline;
     }
+
+    /* Prompt Viewer UI Styles */
+    .prompt-box {
+      width: 100%;
+      height: 320px;
+      font-family: monospace;
+      font-size: 13px;
+      padding: 12px;
+      background-color: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      resize: vertical;
+      margin-bottom: 15px;
+      box-sizing: border-box;
+    }
+
+    .action-btn {
+      display: inline-block;
+      width: 100%;
+      text-align: center;
+      background: var(--primary);
+      color: white;
+      padding: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+      margin-bottom: 10px;
+    }
+
+    .action-btn:hover {
+      background: var(--primary-hover);
+    }
+
+    .action-btn.secondary {
+      background: #4a5568;
+    }
+
+    .action-btn.secondary:hover {
+      background: #2d3748;
+    }
+
+    .disclaimer {
+      font-size: 12px;
+      color: #666;
+      text-align: center;
+      margin-top: 4px;
+      margin-bottom: 15px;
+      font-style: italic;
+    }
+
+    /* Mobile Responsive Sidebar */
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 15px 0 5px;
+      }
+      .nav-list {
+        display: flex;
+        overflow-x: auto;
+        margin-top: 10px;
+      }
+      .nav-btn {
+        white-space: nowrap;
+      }
+    }
   </style>
 </head>
 <body>
 
-<div class="calculator-container">
-  <h2>Copart UK Official Fee Calculator</h2>
+<!-- Sidebar Menu -->
+<div class="sidebar">
+  <div class="sidebar-header">Copart Tools</div>
+  <ul class="nav-list">
+    <li><button class="nav-btn active" onclick="switchTab('calculator', this)">Fee Calculator</button></li>
+    <li><button class="nav-btn" onclick="switchTab('promptViewer', this)">Part Finder Agent Prompt</button></li>
+  </ul>
+</div>
 
-  <!-- Hammer Price Input -->
-  <div class="form-group">
-    <label for="hammerPrice">Hammer / Sale Price (£)</label>
-    <input type="number" id="hammerPrice" placeholder="e.g. 2000" value="2000" min="0" step="0.01" oninput="calculateTotal()">
+<!-- Main Content Area -->
+<div class="main-content">
+  
+  <!-- PAGE 1: Fee Calculator -->
+  <div id="calculator" class="page active">
+    <div class="calculator-container">
+      <h2>Copart UK Official Fee Calculator</h2>
+
+      <!-- Hammer Price Input -->
+      <div class="form-group">
+        <label for="hammerPrice">Hammer / Sale Price (£)</label>
+        <input type="number" id="hammerPrice" placeholder="e.g. 2000" value="2000" min="0" step="0.01" oninput="calculateTotal()">
+      </div>
+
+      <!-- Volume Tier Selection -->
+      <div class="form-group">
+        <label for="volumeTier">Buyer Volume Tier</label>
+        <select id="volumeTier" onchange="calculateTotal()">
+          <option value="B">Low Volume (Fee B) — Fewer than 12 vehicles/year</option>
+          <option value="A">High Volume (Fee A) — 12 or more vehicles/year</option>
+        </select>
+      </div>
+
+      <!-- Fee Toggles Section -->
+      <div class="toggle-section">
+        <div class="section-title">Applicable Fees</div>
+
+        <div class="toggle-group">
+          <label for="enableInternetFee">Include Internet Bid Fee</label>
+          <input type="checkbox" id="enableInternetFee" checked onchange="calculateTotal()">
+        </div>
+
+        <div class="toggle-group">
+          <label for="enableRetrievalFee">Include Lot Retrieval Fee (£50.00)</label>
+          <input type="checkbox" id="enableRetrievalFee" checked onchange="calculateTotal()">
+        </div>
+
+        <div class="toggle-group">
+          <label for="enableDelivery">Include Delivery / Transport Fee</label>
+          <input type="checkbox" id="enableDelivery" onchange="toggleDeliveryInput(); calculateTotal();">
+        </div>
+        <div class="extra-input" id="deliveryInputGroup">
+          <input type="number" id="deliveryFee" placeholder="Enter delivery cost (£)" value="0" min="0" step="0.01" oninput="calculateTotal()">
+        </div>
+      </div>
+
+      <!-- Independent VAT Toggles -->
+      <div class="toggle-section">
+        <div class="section-title">VAT Options (20%)</div>
+
+        <div class="toggle-group">
+          <label for="vatVehicle">Apply VAT to Vehicle Sale Price (VAT Qualifying)</label>
+          <input type="checkbox" id="vatVehicle" onchange="calculateTotal()">
+        </div>
+
+        <div class="toggle-group">
+          <label for="vatBuyerFee">Apply VAT to Buyer Fee</label>
+          <input type="checkbox" id="vatBuyerFee" checked onchange="calculateTotal()">
+        </div>
+
+        <div class="toggle-group">
+          <label for="vatInternetFee">Apply VAT to Internet Bid Fee</label>
+          <input type="checkbox" id="vatInternetFee" checked onchange="calculateTotal()">
+        </div>
+
+        <div class="toggle-group">
+          <label for="vatRetrievalFee">Apply VAT to Lot Retrieval Fee</label>
+          <input type="checkbox" id="vatRetrievalFee" checked onchange="calculateTotal()">
+        </div>
+
+        <div class="toggle-group">
+          <label for="vatDelivery">Apply VAT to Delivery / Transport</label>
+          <input type="checkbox" id="vatDelivery" checked onchange="calculateTotal()">
+        </div>
+      </div>
+
+      <!-- Calculation Breakdown Output -->
+      <div class="breakdown">
+        <div class="breakdown-row">
+          <span>Hammer Price:</span>
+          <span id="outHammer">£0.00</span>
+        </div>
+        <div class="breakdown-row">
+          <span>Buyer Fee (<span id="lblTier">Fee B</span>):</span>
+          <span id="outBuyerFee">£0.00</span>
+        </div>
+        <div class="breakdown-row" id="rowInternet">
+          <span>Internet Bid Fee:</span>
+          <span id="outInternetFee">£0.00</span>
+        </div>
+        <div class="breakdown-row" id="rowRetrieval">
+          <span>Lot Retrieval Fee:</span>
+          <span id="outRetrievalFee">£0.00</span>
+        </div>
+        <div class="breakdown-row" id="rowDelivery" style="display:none;">
+          <span>Delivery Fee:</span>
+          <span id="outDeliveryFee">£0.00</span>
+        </div>
+        <div class="breakdown-row subtotal">
+          <span>Total Calculated VAT (20%):</span>
+          <span id="outVAT">£0.00</span>
+        </div>
+
+        <div class="breakdown-row total">
+          <span>Total Payable:</span>
+          <span id="outTotal">£0.00</span>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        Made by <a href="https://github.com/ajdwilson" target="_blank" rel="noopener noreferrer">ajdwilson on github</a>
+      </div>
+    </div>
   </div>
 
-  <!-- Volume Tier Selection -->
-  <div class="form-group">
-    <label for="volumeTier">Buyer Volume Tier</label>
-    <select id="volumeTier" onchange="calculateTotal()">
-      <option value="B">Low Volume (Fee B) — Fewer than 12 vehicles/year</option>
-      <option value="A">High Volume (Fee A) — 12 or more vehicles/year</option>
-    </select>
-  </div>
+  <!-- PAGE 2: Part Finder Agent Prompt -->
+  <div id="promptViewer" class="page">
+    <div class="calculator-container">
+      <h2>Part Finder Agent Prompt</h2>
+      
+      <div class="form-group">
+        <label for="promptText">Agent Prompt Instructions:</label>
+        <textarea id="promptText" class="prompt-box" readonly placeholder="Loading prompt..."></textarea>
+      </div>
 
-  <!-- Fee Toggles Section -->
-  <div class="toggle-section">
-    <div class="section-title">Applicable Fees</div>
+      <button class="action-btn secondary" id="copyBtn" onclick="copyPromptToClipboard()">Copy to Clipboard</button>
+      
+      <a href="https://chat.qwen.ai/" target="_blank" rel="noopener noreferrer" class="action-btn">Go to free AI Agent</a>
+      
+      <div class="disclaimer">
+        You may need to make your account which a gmail account to access the agent feature :)
+      </div>
 
-    <div class="toggle-group">
-      <label for="enableInternetFee">Include Internet Bid Fee</label>
-      <input type="checkbox" id="enableInternetFee" checked onchange="calculateTotal()">
-    </div>
-
-    <div class="toggle-group">
-      <label for="enableRetrievalFee">Include Lot Retrieval Fee (£50.00)</label>
-      <input type="checkbox" id="enableRetrievalFee" checked onchange="calculateTotal()">
-    </div>
-
-    <div class="toggle-group">
-      <label for="enableDelivery">Include Delivery / Transport Fee</label>
-      <input type="checkbox" id="enableDelivery" onchange="toggleDeliveryInput(); calculateTotal();">
-    </div>
-    <div class="extra-input" id="deliveryInputGroup">
-      <input type="number" id="deliveryFee" placeholder="Enter delivery cost (£)" value="0" min="0" step="0.01" oninput="calculateTotal()">
+      <!-- Footer -->
+      <div class="footer">
+        Made by <a href="https://github.com/ajdwilson" target="_blank" rel="noopener noreferrer">ajdwilson on github</a>
+      </div>
     </div>
   </div>
 
-  <!-- Independent VAT Toggles -->
-  <div class="toggle-section">
-    <div class="section-title">VAT Options (20%)</div>
-
-    <div class="toggle-group">
-      <label for="vatVehicle">Apply VAT to Vehicle Sale Price (VAT Qualifying)</label>
-      <input type="checkbox" id="vatVehicle" onchange="calculateTotal()">
-    </div>
-
-    <div class="toggle-group">
-      <label for="vatBuyerFee">Apply VAT to Buyer Fee</label>
-      <input type="checkbox" id="vatBuyerFee" checked onchange="calculateTotal()">
-    </div>
-
-    <div class="toggle-group">
-      <label for="vatInternetFee">Apply VAT to Internet Bid Fee</label>
-      <input type="checkbox" id="vatInternetFee" checked onchange="calculateTotal()">
-    </div>
-
-    <div class="toggle-group">
-      <label for="vatRetrievalFee">Apply VAT to Lot Retrieval Fee</label>
-      <input type="checkbox" id="vatRetrievalFee" checked onchange="calculateTotal()">
-    </div>
-
-    <div class="toggle-group">
-      <label for="vatDelivery">Apply VAT to Delivery / Transport</label>
-      <input type="checkbox" id="vatDelivery" checked onchange="calculateTotal()">
-    </div>
-  </div>
-
-  <!-- Calculation Breakdown Output -->
-  <div class="breakdown">
-    <div class="breakdown-row">
-      <span>Hammer Price:</span>
-      <span id="outHammer">£0.00</span>
-    </div>
-    <div class="breakdown-row">
-      <span>Buyer Fee (<span id="lblTier">Fee B</span>):</span>
-      <span id="outBuyerFee">£0.00</span>
-    </div>
-    <div class="breakdown-row" id="rowInternet">
-      <span>Internet Bid Fee:</span>
-      <span id="outInternetFee">£0.00</span>
-    </div>
-    <div class="breakdown-row" id="rowRetrieval">
-      <span>Lot Retrieval Fee:</span>
-      <span id="outRetrievalFee">£0.00</span>
-    </div>
-    <div class="breakdown-row" id="rowDelivery" style="display:none;">
-      <span>Delivery Fee:</span>
-      <span id="outDeliveryFee">£0.00</span>
-    </div>
-    <div class="breakdown-row subtotal">
-      <span>Total Calculated VAT (20%):</span>
-      <span id="outVAT">£0.00</span>
-    </div>
-
-    <div class="breakdown-row total">
-      <span>Total Payable:</span>
-      <span id="outTotal">£0.00</span>
-    </div>
-  </div>
-
-  <!-- Footer -->
-  <div class="footer">
-    Made by <a href="https://github.com/ajdwilson" target="_blank" rel="noopener noreferrer">ajdwilson on github</a>
-  </div>
 </div>
 
 <script>
+  /******************************************************************
+   * SIDEBAR & PAGE NAVIGATION LOGIC
+   ******************************************************************/
+  function switchTab(pageId, btnElement) {
+    // Hide all pages
+    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+    // Remove active class from buttons
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+    
+    // Show selected page and set button active
+    document.getElementById(pageId).classList.add('active');
+    btnElement.classList.add('active');
+
+    // Fetch raw GitHub content when viewing the prompt tab for the first time
+    if (pageId === 'promptViewer' && !window.promptLoaded) {
+      fetchPromptContent();
+    }
+  }
+
+  /******************************************************************
+   * PROMPT FETCHER & COPY TO CLIPBOARD
+   ******************************************************************/
+  let promptLoaded = false;
+
+  function fetchPromptContent() {
+    const promptArea = document.getElementById('promptText');
+    const url = "https://raw.githubusercontent.com/AJDWilson/copart-flipping-tools/refs/heads/main/part-finder-prompt.txt";
+
+    fetch(url)
+      .then(response => {
+        if (!response.ok) throw new Error("Failed to fetch prompt content.");
+        return response.text();
+      })
+      .then(text => {
+        promptArea.value = text;
+        window.promptLoaded = true;
+      })
+      .catch(err => {
+        promptArea.value = "Error loading file content: " + err.message;
+      });
+  }
+
+  function copyPromptToClipboard() {
+    const promptArea = document.getElementById('promptText');
+    const copyBtn = document.getElementById('copyBtn');
+
+    if (!promptArea.value) return;
+
+    navigator.clipboard.writeText(promptArea.value).then(() => {
+      const originalText = copyBtn.textContent;
+      copyBtn.textContent = "Copied!";
+      setTimeout(() => {
+        copyBtn.textContent = originalText;
+      }, 2000);
+    }).catch(err => {
+      alert("Failed to copy text: " + err);
+    });
+  }
+
   /******************************************************************
    * EDITABLE CONFIGURATION DATA: COPART UK FEE TABLES & RATES
    ******************************************************************/
